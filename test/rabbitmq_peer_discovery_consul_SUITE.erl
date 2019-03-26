@@ -364,7 +364,7 @@ list_nodes_return_value_basic_long_node_name_test(_Config) ->
                Body = "[{\"Node\": {\"Node\": \"rabbit2\", \"Address\": \"10.20.16.160\"}, \"Checks\": [{\"Node\": \"rabbit2\", \"CheckID\": \"service:rabbitmq\", \"Name\": \"Service \'rabbitmq\' check\", \"ServiceName\": \"rabbitmq\", \"Notes\": \"Connect to the port internally every 30 seconds\", \"Status\": \"passing\", \"ServiceID\": \"rabbitmq\", \"Output\": \"\"}, {\"Node\": \"rabbit2\", \"CheckID\": \"serfHealth\", \"Name\": \"Serf Health Status\", \"ServiceName\": \"\", \"Notes\": \"\", \"Status\": \"passing\", \"ServiceID\": \"\", \"Output\": \"Agent alive and reachable\"}], \"Service\": {\"Address\": \"\", \"Port\": 5672, \"ID\": \"rabbitmq\", \"Service\": \"rabbitmq\", \"Tags\": [\"amqp\"]}}, {\"Node\": {\"Node\": \"rabbit1\", \"Address\": \"10.20.16.159\"}, \"Checks\": [{\"Node\": \"rabbit1\", \"CheckID\": \"service:rabbitmq\", \"Name\": \"Service \'rabbitmq\' check\", \"ServiceName\": \"rabbitmq\", \"Notes\": \"Connect to the port internally every 30 seconds\", \"Status\": \"passing\", \"ServiceID\": \"rabbitmq\", \"Output\": \"\"}, {\"Node\": \"rabbit1\", \"CheckID\": \"serfHealth\", \"Name\": \"Serf Health Status\", \"ServiceName\": \"\", \"Notes\": \"\", \"Status\": \"passing\", \"ServiceID\": \"\", \"Output\": \"Agent alive and reachable\"}], \"Service\": {\"Address\": \"\", \"Port\": 5672, \"ID\": \"rabbitmq\", \"Service\": \"rabbitmq\", \"Tags\": [\"amqp\"]}}]",
                rabbit_json:try_decode(rabbit_data_coercion:to_binary(Body))
              end),
-           ?assertEqual({ok, {['rabbit@rabbit1.node.consul', 'rabbit@rabbit2.node.consul'], disc}},
+           ?assertEqual({ok, {['rabbit@rabbit1.consul', 'rabbit@rabbit2.consul'], disc}},
                         rabbit_peer_discovery_consul:list_nodes()),
            ?assert(meck:validate(rabbit_peer_discovery_httpc)).
 
@@ -385,7 +385,7 @@ list_nodes_return_value_long_node_name_and_custom_domain_test(_Config) ->
                Body = "[{\"Node\": {\"Node\": \"rabbit2\", \"Address\": \"10.20.16.160\"}, \"Checks\": [{\"Node\": \"rabbit2\", \"CheckID\": \"service:rabbitmq\", \"Name\": \"Service \'rabbitmq\' check\", \"ServiceName\": \"rabbitmq\", \"Notes\": \"Connect to the port internally every 30 seconds\", \"Status\": \"passing\", \"ServiceID\": \"rabbitmq\", \"Output\": \"\"}, {\"Node\": \"rabbit2\", \"CheckID\": \"serfHealth\", \"Name\": \"Serf Health Status\", \"ServiceName\": \"\", \"Notes\": \"\", \"Status\": \"passing\", \"ServiceID\": \"\", \"Output\": \"Agent alive and reachable\"}], \"Service\": {\"Address\": \"\", \"Port\": 5672, \"ID\": \"rabbitmq\", \"Service\": \"rabbitmq\", \"Tags\": [\"amqp\"]}}, {\"Node\": {\"Node\": \"rabbit1\", \"Address\": \"10.20.16.159\"}, \"Checks\": [{\"Node\": \"rabbit1\", \"CheckID\": \"service:rabbitmq\", \"Name\": \"Service \'rabbitmq\' check\", \"ServiceName\": \"rabbitmq\", \"Notes\": \"Connect to the port internally every 30 seconds\", \"Status\": \"passing\", \"ServiceID\": \"rabbitmq\", \"Output\": \"\"}, {\"Node\": \"rabbit1\", \"CheckID\": \"serfHealth\", \"Name\": \"Serf Health Status\", \"ServiceName\": \"\", \"Notes\": \"\", \"Status\": \"passing\", \"ServiceID\": \"\", \"Output\": \"Agent alive and reachable\"}], \"Service\": {\"Address\": \"\", \"Port\": 5672, \"ID\": \"rabbitmq\", \"Service\": \"rabbitmq\", \"Tags\": [\"amqp\"]}}]",
                rabbit_json:try_decode(rabbit_data_coercion:to_binary(Body))
              end),
-           ?assertEqual({ok, {['rabbit@rabbit1.node.internal', 'rabbit@rabbit2.node.internal'], disc}},
+           ?assertEqual({ok, {['rabbit@rabbit1.internal', 'rabbit@rabbit2.internal'], disc}},
                         rabbit_peer_discovery_consul:list_nodes()),
            ?assert(meck:validate(rabbit_peer_discovery_httpc)).
 
@@ -1023,7 +1023,7 @@ consul_kv_read_custom_values_test(_Config) ->
     meck:expect(rabbit_peer_discovery_httpc, get,
                 fun(Scheme, Host, Port, Path, Args, Headers, HttpOpts) ->
                         ?assertEqual("http", Scheme),
-                        ?assertEqual("consul.node.consul", Host),
+                        ?assertEqual("consul.consul", Host),
                         ?assertEqual(8501, Port),
                         ?assertEqual([v1, kv, "path", "to", "key"], Path),
                         ?assertEqual([{acquire, session_id}], Args),
@@ -1031,7 +1031,7 @@ consul_kv_read_custom_values_test(_Config) ->
                         ?assertEqual([], HttpOpts),
                         {ok, []}
             end),
-    os:putenv("CONSUL_HOST", "consul.node.consul"),
+    os:putenv("CONSUL_HOST", "consul.consul"),
     os:putenv("CONSUL_PORT", "8501"),
     ?assertEqual({ok, []}, rabbit_peer_discovery_consul:consul_kv_read(["path", "to", "key"], [{acquire, session_id}], rabbit_peer_discovery_consul:maybe_add_acl([]))),
     ?assert(meck:validate(rabbit_peer_discovery_httpc)).
@@ -1055,7 +1055,7 @@ consul_kv_write_custom_values_test(_Config) ->
     meck:expect(rabbit_peer_discovery_httpc, put,
                 fun(Scheme, Host, Port, Path, Args, Headers, Body) ->
                         ?assertEqual("http", Scheme),
-                        ?assertEqual("consul.node.consul", Host),
+                        ?assertEqual("consul.consul", Host),
                         ?assertEqual(8501, Port),
                         ?assertEqual([v1, kv, "path", "to", "key"], Path),
                         ?assertEqual([{acquire, session_id}], Args),
@@ -1063,7 +1063,7 @@ consul_kv_write_custom_values_test(_Config) ->
                         ?assertEqual([], Body),
                         {ok, []}
                 end),
-    os:putenv("CONSUL_HOST", "consul.node.consul"),
+    os:putenv("CONSUL_HOST", "consul.consul"),
     os:putenv("CONSUL_PORT", "8501"),
     ?assertEqual({ok, []}, rabbit_peer_discovery_consul:consul_kv_write(["path", "to", "key"], [{acquire, session_id}], rabbit_peer_discovery_consul:maybe_add_acl([]), [])),
     ?assert(meck:validate(rabbit_peer_discovery_httpc)).
@@ -1087,7 +1087,7 @@ consul_session_create_custom_values_test(_Config) ->
     meck:expect(rabbit_peer_discovery_httpc, put,
                 fun(Scheme, Host, Port, Path, Args, Headers, Body) ->
                         ?assertEqual("http", Scheme),
-                        ?assertEqual("consul.node.consul", Host),
+                        ?assertEqual("consul.consul", Host),
                         ?assertEqual(8501, Port),
                         ?assertEqual([v1, session, create], Path),
                         ?assertEqual([], Args),
@@ -1095,7 +1095,7 @@ consul_session_create_custom_values_test(_Config) ->
                         ?assertEqual([], Body),
                         {ok, []}
             end),
-    os:putenv("CONSUL_HOST", "consul.node.consul"),
+    os:putenv("CONSUL_HOST", "consul.consul"),
     os:putenv("CONSUL_PORT", "8501"),
     ?assertEqual({ok, []}, rabbit_peer_discovery_consul:consul_session_create([], rabbit_peer_discovery_consul:maybe_add_acl([]), [])),
     ?assert(meck:validate(rabbit_peer_discovery_httpc)).
@@ -1119,7 +1119,7 @@ consul_session_renew_custom_values_test(_Config) ->
     meck:expect(rabbit_peer_discovery_httpc, put,
                 fun(Scheme, Host, Port, Path, Args, Headers, Body) ->
                         ?assertEqual("http", Scheme),
-                        ?assertEqual("consul.node.consul", Host),
+                        ?assertEqual("consul.consul", Host),
                         ?assertEqual(8501, Port),
                         ?assertEqual([v1, session, renew, session_id], Path),
                         ?assertEqual([], Args),
@@ -1127,7 +1127,7 @@ consul_session_renew_custom_values_test(_Config) ->
                         ?assertEqual([], Body),
                         {ok, []}
                 end),
-    os:putenv("CONSUL_HOST", "consul.node.consul"),
+    os:putenv("CONSUL_HOST", "consul.consul"),
     os:putenv("CONSUL_PORT", "8501"),
     ?assertEqual({ok, []}, rabbit_peer_discovery_consul:consul_session_renew("session_id", [], rabbit_peer_discovery_consul:maybe_add_acl([]))),
     ?assert(meck:validate(rabbit_peer_discovery_httpc)).
