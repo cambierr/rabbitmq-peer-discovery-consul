@@ -419,7 +419,6 @@ maybe_add_domain(Value) ->
   case get_config_key(consul_use_longname, M) of
       true ->
           rabbit_data_coercion:to_atom(string:join([atom_to_list(Value),
-                                    "node",
                                     get_config_key(consul_domain, M)],
                                    "."));
       false -> Value
